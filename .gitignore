@@ -1,3 +1,11 @@
+# Custom defined
+**/datasets/
+**/final_models/
+**/init/
+**/logs/
+**/preprocessed/
+**/jpqtower/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
