@@ -1,5 +1,5 @@
 <h1 style="text-align:center">
-<img style="vertical-align:middle" width="600" height="180" src="./images/income-logo.png" />
+<img style="vertical-align:middle" width="1030" height="240" src="./images/income-logo.png" />
 </h1>
 
 # Index Compression Methods (INCOME)
