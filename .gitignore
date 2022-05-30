@@ -5,6 +5,7 @@
 **/logs/
 **/preprocessed/
 **/jpqtower/
+**/faiss-index/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
