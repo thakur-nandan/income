@@ -18,8 +18,8 @@ logging.basicConfig(format='%(asctime)s - %(message)s',
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, required=True)
-parser.add_argument("--query_encoder", type=str, required=True)
-parser.add_argument("--doc_encoder", type=str, required=True)
+parser.add_argument("--query_encoder", type=str, default="nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b")
+parser.add_argument("--doc_encoder", type=str, default="nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b")
 parser.add_argument("--split", type=str, default='test')
 parser.add_argument("--encode_batch_size", type=int, default=64)
 parser.add_argument("--output_index_path", type=str, default=None)
