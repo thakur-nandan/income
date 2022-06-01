@@ -1,8 +1,5 @@
-import requests
 from tqdm.autonotebook import tqdm
-import logging
-
-logger = logging.getLogger(__name__)
+import requests
 
 def download_url(url: str, save_path: str, chunk_size: int = 1024):
     """Download url with progress bar using tqdm

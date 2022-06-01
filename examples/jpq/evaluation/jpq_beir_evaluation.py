@@ -1,4 +1,4 @@
-from income.jpq.model import JPQDualEncoder, JPQDualEncoderTASB
+from income.jpq.models import JPQDualEncoder
 from income.jpq.search import DenseRetrievalJPQSearch as DRJS
 from income import LoggingHandler
 from beir.datasets.data_loader import GenericDataLoader
@@ -18,8 +18,17 @@ logging.basicConfig(format='%(asctime)s - %(message)s',
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, required=True)
+
+#### TAS-B (DistilBERT) backbone based JPQ question and document encoders
 parser.add_argument("--query_encoder", type=str, default="nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b")
 parser.add_argument("--doc_encoder", type=str, default="nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b")
+parser.add_argument("--backbone", type=str, default='distilbert', choices=['distilbert', 'roberta'])
+
+#### STAR (Roberta) backbone based JPQ question and document encoders
+# parser.add_argument("--query_encoder", type=str, default="nthakur20/jpq-question_encoder-base-msmarco-roberta-star")
+# parser.add_argument("--doc_encoder", type=str, default="nthakur20/jpq-document_encoder-base-msmarco-roberta-star")
+# parser.add_argument("--backbone", type=str, default='roberta', choices=['distilbert', 'roberta'])
+
 parser.add_argument("--split", type=str, default='test')
 parser.add_argument("--encode_batch_size", type=int, default=64)
 parser.add_argument("--output_index_path", type=str, default=None)
@@ -43,7 +52,10 @@ else:
     corpus_index = None
 
 #### Load the RepCONC model and retrieve using dot-similarity
-model = DRJS(JPQDualEncoderTASB((args.query_encoder, args.doc_encoder),), batch_size=args.encode_batch_size, corpus_index=corpus_index)
+logging.info("JPQ Question Encoder with {} backbone: {}".format(args.backbone, args.query_encoder))
+logging.info("JPQ Document Encoder with {} backbone: {}".format(args.backbone, args.doc_encoder))
+
+model = DRJS(JPQDualEncoder((args.query_encoder, args.doc_encoder), backbone=args.backbone), batch_size=args.encode_batch_size, corpus_index=corpus_index)
 retriever = EvaluateRetrieval(model, score_function="dot") # or "dot" for dot-product
 results = retriever.retrieve(corpus, queries)
 
