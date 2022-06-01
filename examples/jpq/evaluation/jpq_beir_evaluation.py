@@ -1,5 +1,5 @@
 from income.jpq.model import JPQDualEncoder, JPQDualEncoderTASB
-from income.jpq.model import DenseRetrievalJPQSearch as DRJS
+from income.jpq.search import DenseRetrievalJPQSearch as DRJS
 from income import LoggingHandler
 from beir.datasets.data_loader import GenericDataLoader
 from beir.retrieval.evaluation import EvaluateRetrieval
