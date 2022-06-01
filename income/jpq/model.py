@@ -2,6 +2,7 @@ import os
 import torch
 import faiss
 import logging
+import pathlib
 import numpy as np
 from torch import nn
 from numpy import ndarray
@@ -13,7 +14,8 @@ from transformers import RobertaModel, DistilBertModel
 from transformers.models.roberta.modeling_roberta import RobertaPreTrainedModel
 from transformers.models.distilbert.modeling_distilbert import DistilBertPreTrainedModel
 
-from jpq.dataset import pack_tensor_2D
+from .dataset import pack_tensor_2D
+from .util import download_url
 from jpq.star_tokenizer import RobertaTokenizer as JPQTokenizer
 from transformers import AutoTokenizer
 
@@ -274,24 +276,50 @@ class JPQTowerTASB(TASBDot):
 #### Custom JPQDualEncoderTASB model ####
 
 class JPQDualEncoderTASB:
-    def __init__(self, model_path: Tuple, sep: str =". ", **kwargs):
+    def __init__(self, model_path: Tuple, sep: str =". ", faiss_path: str = None, 
+                 dummy_url="https://huggingface.co/nthakur20/dummy-IVFPQ-96M-768D-faiss-index/resolve/main/index.faiss", 
+                 **kwargs):
         self.sep = sep
         self.q_model = JPQTowerTASB.from_pretrained(model_path[0])
         self.doc_model = JPQTowerTASB.from_pretrained(model_path[1])
+        self.faiss_path = faiss_path
+        self.dummy_url = dummy_url
     
     def encode_queries(self, queries: List[str], batch_size: int = 16, **kwargs) -> np.ndarray:
         return self.q_model.encode(queries, batch_size=batch_size, **kwargs)
     
     def encode_corpus(self, corpus: List[Dict[str, str]], batch_size: int = 8, faiss_metric = faiss.METRIC_INNER_PRODUCT, **kwargs) -> faiss.Index:
         # Init fake PQ index
-        logger.info("Init PQ index...")
+        logger.info("Init dummy PQ index...")
         D, M = self.doc_model.config.hidden_size, self.doc_model.config.MCQ_M
+
         coarse_quantizer = faiss.IndexFlatL2(D)
         assert self.doc_model.config.MCQ_K == 256
-        logger.info("Training IVFPQ index (fake)...")
         index = faiss.IndexIVFPQ(coarse_quantizer, D, 1, M, 8, faiss_metric)
-        fake_train_pts = np.random.random((10000, D)).astype(np.float32)
-        index.train(fake_train_pts) # fake training
+        
+        if D == 768 and M == 96:
+            logger.info("Downloading a IVFPQ dummy index...")
+            logger.info("IVFPQ Parameters: Dimension = {} and M = {}".format(D, M))
+            
+            if not self.faiss_path: 
+                faiss_dir = os.path.join(pathlib.Path(__file__).parent.absolute(), "faiss")
+                os.makedirs(faiss_dir, exist_ok=True)
+                self.faiss_path = os.path.join(faiss_dir, "index.faiss")
+            
+            if not os.path.exists(self.faiss_path):    
+                logger.info("Starting to download dummy IVFPQ from url: {}".format(self.dummy_url))
+                logging.info("Saving dummy IVFPQ to path: {}".format(self.faiss_path))
+                download_url(self.dummy_url, save_path=self.faiss_path)
+            
+            index = faiss.read_index(self.faiss_path)
+            assert index.is_trained == True
+        
+        else:
+            logger.info("Training a IVFPQ dummy index...")
+            logger.info("IVFPQ Parameters: Dimension = {} and M = {}".format(D, M))
+            # # As we need to provide atleast 9984 for no warnings!
+            fake_train_pts = np.random.random((9984, D)).astype(np.float32)
+            index.train(fake_train_pts) # fake training
 
         # ignore coarse quantizer
         coarse_quantizer = faiss.downcast_index(index.quantizer)
@@ -373,19 +401,22 @@ class DenseRetrievalJPQSearch:
         else:
             logger.warning("Skip the corpus encoding process and utilize pre-computed corpus_index")
         
-        # keep self.corpus_index on cpu
         if faiss.get_num_gpus() == 1:
             logger.info("Transfering index to GPU-0")
             res = faiss.StandardGpuResources()
             co = faiss.GpuClonerOptions()
             co.useFloat16 = faiss.downcast_index(self.corpus_index).pq.M >= 56
             corpus_index = faiss.index_cpu_to_gpu(res, 0, self.corpus_index, co)
+        
         elif faiss.get_num_gpus() > 1:
             logger.info("Transfering index to multiple GPUs")
             co = faiss.GpuMultipleClonerOptions()
             co.useFloat16 = faiss.downcast_index(self.corpus_index).pq.M >= 56
             corpus_index = faiss.index_cpu_to_all_gpus(self.corpus_index, co)
+        
+        # keep self.corpus_index on cpu
         else:
+            logger.info("Keeping index in CPU")
             corpus_index = self.corpus_index
 
         logger.info("Begin search")
