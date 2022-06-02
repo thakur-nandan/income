@@ -1,11 +1,11 @@
 from beir import util
+from tqdm.autonotebook import tqdm
 from beir.datasets.data_loader import GenericDataLoader
 
 import pathlib, os, csv
 import argparse
 import logging
 import random
-from tqdm import tqdm
 
 random.seed(42)
 

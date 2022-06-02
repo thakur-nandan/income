@@ -40,8 +40,7 @@ class JPQTowerRoberta(RobertaDot):
         self.centroids = nn.Parameter(torch.zeros((
             config.MCQ_M, config.MCQ_K, config.hidden_size // config.MCQ_M)))
         self.rotation = nn.Parameter(torch.eye(config.hidden_size))
-        self.tokenizer = JPQTokenizer.from_pretrained(
-            "roberta-base", do_lower_case=True)
+        self.tokenizer = RobertaTokenizer.from_pretrained(config._name_or_path, do_lower_case=True)
         self.max_input_length = max_input_length
     
     def forward(self, input_ids, attention_mask):

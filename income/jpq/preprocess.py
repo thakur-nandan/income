@@ -1,3 +1,7 @@
+from .models.backbones.roberta_tokenizer import RobertaTokenizer
+from transformers import AutoTokenizer
+from tqdm.autonotebook import tqdm
+
 import os
 import json
 import pickle
@@ -5,8 +9,6 @@ import argparse
 import subprocess
 import multiprocessing
 import numpy as np
-from tqdm import tqdm
-from transformers import AutoTokenizer
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,7 +31,13 @@ def pad_input_ids(input_ids, max_length,
 
 
 def tokenize_to_file(args, in_path, output_dir, line_fn, max_length, begin_idx, end_idx, tokenizer):
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer) 
+
+    ## Use custom RobertaTokenizer provided incase you wish to train a Roberta-base tokenizer
+    if tokenizer == "roberta-base":
+        tokenizer = RobertaTokenizer.from_pretrained(tokenizer, do_lower_case = True, cache_dir=None)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer) 
+    
     os.makedirs(output_dir, exist_ok=True)
     data_cnt = end_idx - begin_idx
     ids_array = np.memmap(
@@ -316,6 +324,7 @@ def get_arguments():
         "--tokenizer",
         type=str,
         default="sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco",
+        choices=["sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco", "roberta-base"],
         help="tokenizer to use for encoding, default: sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco",
     )
     parser.add_argument(

@@ -1,3 +1,13 @@
+from .dataset import TextTokenIdsCache, SequenceDataset, pack_tensor_2D
+from .models.backbones import DistilBertDot, RobertaDot
+from .models.backbones.roberta_tokenizer import RobertaTokenizer
+
+from tqdm.autonotebook import tqdm, trange
+from collections import defaultdict
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader, RandomSampler
+from transformers import (AdamW, get_linear_schedule_with_warmup,
+    RobertaConfig, AutoConfig, AutoTokenizer)
 
 import os
 import torch
@@ -7,15 +17,6 @@ import faiss
 import logging
 import argparse
 import numpy as np
-from tqdm import tqdm, trange
-from collections import defaultdict
-from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data import DataLoader, RandomSampler
-from transformers import (AdamW, get_linear_schedule_with_warmup,
-    RobertaConfig, AutoConfig)
-
-from income.jpq.dataset import TextTokenIdsCache, SequenceDataset, pack_tensor_2D
-from income.jpq.model import RobertaDot, TASBDot
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,7 @@ def compute_loss(query_embeddings, pq_codes, centroids,
     return loss, mrr
 
 
-def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index):
+def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index, tokenizer):
     """ Train the model """
     ivf_index = faiss.downcast_index(opq_index.index)
     if args.gpu_search:
@@ -227,9 +228,11 @@ def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index):
                 faiss.copy_array_to_vector(
                     centroid_embeds.detach().cpu().numpy().ravel(), 
                     ivf_index.pq.centroids)
+                
                 if args.gpu_search:
                     gpu_index = None
                     gpu_index = faiss.index_cpu_to_gpu(res, 0, opq_index, co)
+                
                 if args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     tb_writer.add_scalar('lr', scheduler.get_lr()[0], global_step)
                     cur_loss =  (tr_loss - logging_loss)/args.logging_steps
@@ -242,6 +245,8 @@ def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index):
                     logging_mrr = tr_mrr
         
         save_model(model, args.model_save_dir, f'epoch-{epoch_idx+1}', args)
+        tokenizer.save_pretrained(os.path.join(args.model_save_dir, f'epoch-{epoch_idx+1}'))
+        model.config.save_pretrained(os.path.join(args.model_save_dir, f'epoch-{epoch_idx+1}'))
         faiss.write_index(opq_index,
             os.path.join(args.model_save_dir, f'epoch-{epoch_idx+1}', 
                 os.path.basename(args.init_index_path)))
@@ -254,6 +259,7 @@ def run_parse_args():
     parser.add_argument("--log_dir", type=str, required=True)
     parser.add_argument("--init_index_path", type=str, required=True)
     parser.add_argument("--init_model_path", type=str, required=True)
+    parser.add_argument("--init_backbone", type=str, required=True, choices=["roberta", "distilbert"])
     
     parser.add_argument("--lambda_cut", type=int, required=True)
     parser.add_argument("--centroid_lr", type=float, required=True)
@@ -294,10 +300,22 @@ def train_genq(args):
     # Set seed
     set_seed(args)
 
-    config = AutoConfig.from_pretrained(args.init_model_path)
-    config.return_dict = False
-    config.gradient_checkpointing = args.gpu_search # to save cuda memory
-    model = TASBDot.from_pretrained(args.init_model_path, config=config)    
+    if args.init_backbone == "distilbert":
+        logger.info("loading Model for GenQ training: {}".format(args.init_model_path)) 
+        config = AutoConfig.from_pretrained(args.init_model_path)
+        config.return_dict = False
+        config.gradient_checkpointing = args.gpu_search # to save cuda memory
+        model = DistilBertDot.from_pretrained(args.init_model_path, config=config)
+        tokenizer = AutoTokenizer.from_pretrained(args.init_model_path)
+    
+    elif args.init_backbone == "roberta":
+        logger.info("loading Model for GenQ training: {}".format(args.init_model_path))
+        config = RobertaConfig.from_pretrained(args.init_model_path)
+        config.return_dict = False
+        config.gradient_checkpointing = args.gpu_search # to save cuda memory
+        model = RobertaDot.from_pretrained(args.init_model_path, config=config)
+        tokenizer = RobertaTokenizer.from_pretrained("roberta-base", do_lower_case=True)
+    
     model.to(args.model_device)
 
     opq_index = faiss.read_index(args.init_index_path)
@@ -325,7 +343,7 @@ def train_genq(args):
     centroid_embeds = torch.FloatTensor(centroid_embeds).to(args.model_device)
     centroid_embeds.requires_grad = True
     
-    train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index)
+    train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index, tokenizer)
     
 
 if __name__ == "__main__":

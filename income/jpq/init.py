@@ -3,6 +3,18 @@
 Encoding part is modified base on 
     https://github.com/jingtaozhan/DRhard/blob/main/star/inference.py (SIGIR'21)
 '''
+
+from .models.backbones import DistilBertDot, RobertaDot
+from .dataset import (
+    TextTokenIdsCache, SequenceDataset,
+    get_collate_function
+)
+
+from transformers import RobertaConfig, AutoConfig
+from torch.utils.data.dataloader import DataLoader
+from torch.utils.data.sampler import SequentialSampler
+from tqdm.autonotebook import tqdm
+
 import os
 import torch
 import faiss
@@ -10,16 +22,6 @@ import argparse
 import subprocess
 import logging
 import numpy as np
-from tqdm import tqdm
-from transformers import RobertaConfig, AutoConfig, AutoModel
-from torch.utils.data.dataloader import DataLoader
-from torch.utils.data.sampler import SequentialSampler
-
-from jpq.model import TASBDot
-from jpq.dataset import (
-    TextTokenIdsCache, SequenceDataset,
-    get_collate_function
-)
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +86,7 @@ def doc_inference(
 def init(
     preprocess_dir: str,
     model_dir: str,
+    backbone: str,
     output_dir: str,
     subvector_num: int,
     max_doc_length: int = 512,
@@ -100,8 +103,17 @@ def init(
 
     if not os.path.exists(doc_embed_path):
         logger.info("Encoding passages to dense vectors ...")
-        config = AutoConfig.from_pretrained(model_dir, gradient_checkpointing=False)
-        model = TASBDot.from_pretrained(model_dir, config=config)
+        
+        if backbone == "distilbert":
+            logger.info("Loading Model for encoding passages: {} ...".format(model_dir))
+            config = AutoConfig.from_pretrained(model_dir, gradient_checkpointing=False)
+            model = DistilBertDot.from_pretrained(model_dir, config=config)
+        
+        elif backbone == "roberta":
+            logger.info("Loading Model for encoding passages: {} ...".format(model_dir))
+            config = RobertaConfig.from_pretrained(model_dir, gradient_checkpointing=False)
+            model = RobertaDot.from_pretrained(model_dir, config=config)
+        
         model = model.to(device)
         doc_inference(model, device, max_doc_length, output_dir, eval_batch_size, n_gpu, 
                   preprocess_dir, doc_embed_path, doc_embed_size)
@@ -113,7 +125,7 @@ def init(
     doc_embeddings = np.memmap(doc_embed_path, 
         dtype=np.float32, mode="r")
     doc_embeddings = doc_embeddings.reshape(-1, doc_embed_size)
-
+    
     save_index_path = os.path.join(output_dir, f"OPQ{subvector_num},IVF1,PQ{subvector_num}x8.index")
     res = faiss.StandardGpuResources()
     
@@ -136,7 +148,7 @@ def init(
     index.add(doc_embeddings)
     logger.info("Converting indexes from GPU to CPU!")
     index = faiss.index_gpu_to_cpu(index)
-    logger.info("Saving index to CPU memory!")
+    logger.info("Saving index to CPU memory: {}".format(save_index_path))
     faiss.write_index(index, save_index_path)
 
 
@@ -146,6 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", type=str, required=True)
     parser.add_argument("--subvector_num", type=int, required=True)
     parser.add_argument("--model_dir", type=str, default="sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco")
+    parser.add_argument("--backbone", type=str, default="distilbert", choices=["disilbert", "roberta"])
     parser.add_argument("--max_doc_length", type=int, default=512)
     parser.add_argument("--eval_batch_size", type=int, default=128)
     parser.add_argument("--doc_embed_size", type=int, default=768)

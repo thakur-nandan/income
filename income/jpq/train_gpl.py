@@ -1,3 +1,12 @@
+from .dataset import TextTokenIdsCache, SequenceDataset, pack_tensor_2D
+from .models.backbones import DistilBertDot, RobertaDot
+from .models.backbones.roberta_tokenizer import RobertaTokenizer
+
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader, RandomSampler
+from transformers import (AdamW, get_linear_schedule_with_warmup,
+    RobertaConfig, AutoConfig, AutoTokenizer)
+from sentence_transformers import CrossEncoder
 
 import os, sys
 import torch
@@ -12,15 +21,6 @@ import csv
 import datetime
 from tqdm import tqdm, trange
 from collections import defaultdict
-
-from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data import DataLoader, RandomSampler
-from transformers import (AdamW, get_linear_schedule_with_warmup,
-    RobertaConfig, AutoConfig)
-from sentence_transformers import CrossEncoder
-
-from income.jpq.dataset import TextTokenIdsCache, SequenceDataset, pack_tensor_2D
-from income.jpq.model import TASBDot
 
 csv.field_size_limit(sys.maxsize)
 logger = logging.getLogger(__name__)
@@ -141,7 +141,7 @@ def compute_loss(query_embeddings, pq_codes, centroids,
     return loss, mrr
 
 
-def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index):
+def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index, tokenizer):
     """ Train the model """
     ivf_index = faiss.downcast_index(opq_index.index)
     if args.gpu_search:
@@ -213,6 +213,7 @@ def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index):
         queries[int(row[0])] = row[1]
 
     cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', device=args.model_device, max_length=350)
+
     
     for epoch_idx, _ in enumerate(train_iterator):
         epoch_iterator = tqdm(train_dataloader, desc="Iteration")
@@ -243,6 +244,7 @@ def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index):
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
             if args.n_gpu > 1:
                 loss = loss.mean() # mean() to average on multi-gpu parallel (not distributed) training
+            
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
@@ -263,11 +265,15 @@ def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index):
             
             if step == 45000:
                 save_model(model, args.model_save_dir, f'step-{step}', args)
+                tokenizer.save_pretrained(os.path.join(args.model_save_dir, f'step-{step}'))
+                model.config.save_pretrained(os.path.join(args.model_save_dir, f'step-{step}'))
                 faiss.write_index(opq_index,
                     os.path.join(args.model_save_dir, f'step-{step}', 
                         os.path.basename(args.init_index_path)))
         
         save_model(model, args.model_save_dir, f'epoch-{epoch_idx+1}', args)
+        tokenizer.save_pretrained(os.path.join(args.model_save_dir, f'epoch-{epoch_idx+1}'))
+        model.config.save_pretrained(os.path.join(args.model_save_dir, f'epoch-{epoch_idx+1}'))
         faiss.write_index(opq_index,
             os.path.join(args.model_save_dir, f'epoch-{epoch_idx+1}', 
                 os.path.basename(args.init_index_path)))
@@ -280,6 +286,7 @@ def run_parse_args():
     parser.add_argument("--log_dir", type=str, required=True)
     parser.add_argument("--init_index_path", type=str, required=True)
     parser.add_argument("--init_model_path", type=str, required=True)
+    parser.add_argument("--init_backbone", type=str, choices=["roberta", "distilbert"])
     
     parser.add_argument("--lambda_cut", type=int, required=True)
     parser.add_argument("--centroid_lr", type=float, required=True)
@@ -322,10 +329,22 @@ def train_gpl(args):
     # Set seed
     set_seed(args)
 
-    config = AutoConfig.from_pretrained(args.init_model_path)
-    config.return_dict = False
-    config.gradient_checkpointing = args.gpu_search # to save cuda memory
-    model = TASBDot.from_pretrained(args.init_model_path, config=config)    
+    if args.init_backbone == "distilbert":
+        logger.info("loading Model for GPL training: {}".format(args.init_model_path)) 
+        config = AutoConfig.from_pretrained(args.init_model_path)
+        config.return_dict = False
+        config.gradient_checkpointing = args.gpu_search # to save cuda memory
+        model = DistilBertDot.from_pretrained(args.init_model_path, config=config)
+        tokenizer = AutoTokenizer.from_pretrained(args.init_model_path)
+    
+    elif args.init_backbone == "roberta":
+        logger.info("loading Model for GPL training: {}".format(args.init_model_path))
+        config = RobertaConfig.from_pretrained(args.init_model_path)
+        config.return_dict = False
+        config.gradient_checkpointing = args.gpu_search # to save cuda memory
+        model = RobertaDot.from_pretrained(args.init_model_path, config=config)
+        tokenizer = RobertaTokenizer.from_pretrained("roberta-base", do_lower_case=True)
+       
     model.to(args.model_device)
 
     opq_index = faiss.read_index(args.init_index_path)
@@ -353,7 +372,7 @@ def train_gpl(args):
     centroid_embeds = torch.FloatTensor(centroid_embeds).to(args.model_device)
     centroid_embeds.requires_grad = True
     
-    train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index)
+    train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index, tokenizer)
 
 if __name__ == "__main__":
     args = run_parse_args()
