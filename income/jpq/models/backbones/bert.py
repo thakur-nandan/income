@@ -8,28 +8,61 @@ from torch import nn, Tensor
 from tqdm.autonotebook import trange
 from typing import List, Dict, Union, Tuple
 
-from transformers import DistilBertModel
-from transformers.models.distilbert.modeling_distilbert import DistilBertPreTrainedModel
+from transformers import BertModel
+from transformers.models.bert.modeling_bert import BertPreTrainedModel
 
 from .util import pack_tensor_2D, batch_to_device
 from transformers import AutoTokenizer
 
 logger = logging.getLogger(__name__)
 
+class BertDot(BertPreTrainedModel):
+    def __init__(self, config, pooling="average", **kwargs):
+        BertPreTrainedModel.__init__(self, config)
+        self.bert = BertModel(config, add_pooling_layer=False)
+        if not hasattr(config, "pooling"):
+            self.config.pooling = pooling
 
-class DistilBertDot(DistilBertPreTrainedModel):
-    def __init__(self, config):
-        DistilBertPreTrainedModel.__init__(self, config)
-        self.distilbert = DistilBertModel(config)
-        self.apply(self._init_weights)               
-    
-    def forward(self, input_ids, attention_mask):
-        outputs1 = self.distilbert(input_ids=input_ids,
-                                attention_mask=attention_mask)
-        return outputs1[0][:, 0]
+    def forward(
+        self,
+        input_ids,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        encoder_hidden_states=None,
+        encoder_attention_mask=None,
+        output_attentions=None,
+        output_hidden_states=None,
+        normalize=False,
+    ):
 
+        model_output = self.bert(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+            encoder_hidden_states=encoder_hidden_states,
+            encoder_attention_mask=encoder_attention_mask,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+        )
 
-class JPQTowerDistilBert(DistilBertDot):
+        last_hidden = model_output[0]
+
+        if self.config.pooling == "average":
+            emb = last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
+        elif self.config.pooling == "cls":
+            emb = last_hidden[:, 0]
+
+        if normalize:
+            emb = torch.nn.functional.normalize(emb, dim=-1)
+        return emb
+
+class JPQTowerBert(BertDot):
     def __init__(self, config, max_input_length=512):
         super().__init__(config)
         assert config.hidden_size % config.MCQ_M == 0
@@ -98,7 +131,9 @@ class JPQTowerDistilBert(DistilBertDot):
             features = batch_to_device(features, device)
 
             with torch.no_grad():
+                print(features)
                 embeddings = self.forward(**features)
+
                 embeddings = embeddings.detach().cpu().numpy()
 
                 if index is None:

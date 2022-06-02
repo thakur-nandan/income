@@ -1,5 +1,5 @@
 from .dataset import TextTokenIdsCache, SequenceDataset, pack_tensor_2D
-from .models.backbones import DistilBertDot, RobertaDot
+from .models.backbones import DistilBertDot, RobertaDot, BertDot
 from .models.backbones.roberta_tokenizer import RobertaTokenizer
 
 from torch.utils.tensorboard import SummaryWriter
@@ -286,7 +286,7 @@ def run_parse_args():
     parser.add_argument("--log_dir", type=str, required=True)
     parser.add_argument("--init_index_path", type=str, required=True)
     parser.add_argument("--init_model_path", type=str, required=True)
-    parser.add_argument("--init_backbone", type=str, choices=["roberta", "distilbert"])
+    parser.add_argument("--init_backbone", type=str, required=True, choices=["roberta", "distilbert", "bert"])
     
     parser.add_argument("--lambda_cut", type=int, required=True)
     parser.add_argument("--centroid_lr", type=float, required=True)
@@ -337,6 +337,14 @@ def train_gpl(args):
         model = DistilBertDot.from_pretrained(args.init_model_path, config=config)
         tokenizer = AutoTokenizer.from_pretrained(args.init_model_path)
     
+    elif args.init_backbone == "bert":
+        logger.info("loading Model for GenQ training: {}".format(args.init_model_path))
+        config = AutoConfig.from_pretrained(args.init_model_path)
+        config.return_dict = False
+        config.gradient_checkpointing = args.gpu_search # to save cuda memory
+        model = BertDot.from_pretrained(args.init_model_path, config=config)
+        tokenizer = AutoTokenizer.from_pretrained(args.init_model_path)
+
     elif args.init_backbone == "roberta":
         logger.info("loading Model for GPL training: {}".format(args.init_model_path))
         config = RobertaConfig.from_pretrained(args.init_model_path)
