@@ -3,12 +3,15 @@
 </h1>
 
 ## :dollar: What is it?
-Index Compression Methods (INCOME) repository helps you easily train and evaluate memory-compressed binary retrievers on any custom dataset. We provide recent state-of-the-art techniques for training and unsupervised (without requiring custom training data) for domain-adaptation of NLP-based binary retrieval models across any dataset. 
+Index Compression Methods (INCOME) repository helps you train and evaluate diverse memory efficient dense retrievers across any custom dataset. We provide effective techniques for unsupervised domain-adaptation training, open-sourced models and easy evaluation code. 
 
-We currently support the following models: [BPR: Binary Passage Retriever](https://aclanthology.org/2021.acl-short.123/), [JPQ: ](https://dl.acm.org/doi/10.1145/3459637.3482358) 
+We currently support the following memory efficient dense retriever model architectures: 
+- [BPR: Binary Passage Retriever](https://aclanthology.org/2021.acl-short.123/) (ACL 2021)
+- [JPQ: Jointly Optimizing Query Encoder and Product Quantization to Improve Retrieval Performance](https://dl.acm.org/doi/10.1145/3459637.3482358) (CIKM 2021)
 
 For more information, checkout our publication:
 - [Domain Adaptation for Memory-Efficient Dense Retrieval](https://arxiv.org/abs/2205.11498/) (Arxiv preprint)
+
 
 ## :dollar: Installation
 One can either install income via `pip`
@@ -31,9 +34,9 @@ We currently support training and inference of these compressed dense retrievers
 |:---:|:----:|:----:|:----:|
 | **Supervised Compression** |
 | BPR [(Yamada et al., 2021)](https://aclanthology.org/2021.acl-short.123/) | [NQ (DPR)]() | 32 x | 0.201 |
-| BPR [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/nthakur20/bpr-base-msmarco-distilbert-tas-b)  | 32 x |  0.357 |
+| BPR [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/nthakur20/bpr-base-msmarco-distilbert-tas-b)  | 32 x |  **0.357** |
 | JPQ [(Zhan et al., 2021)](https://dl.acm.org/doi/10.1145/3459637.3482358) | STAR [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-roberta-star) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-roberta-star) | 32 x | 0.389 |
-| JPQ [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b)  | 32 x | 0.402 |
+| JPQ [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b)  | 32 x | **0.402** |
 
 
 ## :dollar: Quick Example
@@ -44,10 +47,54 @@ We currently support training and inference of these compressed dense retrievers
 ## :dollar: Why should we do domain adaptation?
 
 
+
 ## :dollar: Inference
 
 
 ## :dollar: Training
+
+### :dollar: BPR
+
+```bash
+export dataset="nfcorpus"
+
+python -m income.bpr.train \
+    --path_to_generated_data "generated/$dataset" \
+    --base_ckpt "msmarco-distilbert-base-tas-b" \
+    --gpl_score_function "dot" \
+    --batch_size_gpl 32 \
+    --gpl_steps 10000 \
+    --new_size -1 \
+    --queries_per_passage -1 \
+    --output_dir "output/$dataset" \
+    --generator "BeIR/query-gen-msmarco-t5-base-v1" \
+    --retrievers "msmarco-distilbert-base-tas-b" "msmarco-distilbert-base-v3" "msmarco-MiniLM-L-6-v3" \
+    --retriever_score_functions "dot" "cos_sim" "cos_sim" \
+    --cross_encoder "cross-encoder/ms-marco-MiniLM-L-6-v2" \
+    --qgen_prefix "gen-t5-base-2-epoch-default-lr-3-ques" \
+    --evaluation_data "./$dataset" \
+    --evaluation_output "evaluation/$dataset" \
+    --do_evaluation \
+    --use_amp   # Use this for efficient training if the machine supports AMP
+```
+
+### :dollar: JPQ
+
+
+
+
+
+### :dollar: Disclaimer
+
+For reproducibility purposes, we work with the original code repositories and modify them in INCOME if they available, for eg. [BPR](https://github.com/studio-ousia/bpr) and [JPQ](https://github.com/jingtaozhan/JPQ). It remains the user's responsibility to determine whether you as a user have permission to use the original models and to cite the right owner of each model. Check the below table for reference.
+
+If you're a model owner and wish to update any part of it, or do not want your model to be included in this library, feel free to post an issue here or make a pull request!
+
+| Model/Method | Citation | GitHub |
+|:---:|:----:|:----:|
+| BPR | [(Yamada et al., 2021)](https://aclanthology.org/2021.acl-short.123/) | [https://github.com/studio-ousia/bpr](https://github.com/studio-ousia/bpr) |
+| JPQ | [(Zhan et al., 2021)](https://dl.acm.org/doi/10.1145/3459637.3482358) | [https://github.com/jingtaozhan/JPQ](https://github.com/jingtaozhan/JPQ) |
+| GPL | [(Wang et al., 2021)](https://arxiv.org/abs/2112.07577) | [https://github.com/UKPLab/gpl](https://github.com/UKPLab/gpl)|
 
 
 ## :dollar: Citing & Authors
