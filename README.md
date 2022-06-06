@@ -27,13 +27,13 @@ With that, you should be ready to go!
 
 We currently support training and inference of these compressed dense retrievers within our repository:
 
-|   | Link| Models (on HF)| Memory Compr. | BEIR (Avg. NDCG@10) |
-|---|:---:|:----:|:----:|:----:|
+|   | Models (on HF)| Memory Compr. | BEIR (Avg. NDCG@10) |
+|:---:|:----:|:----:|:----:|
 | **Supervised Compression** |
-| BPR | [(Yamada et al., 2021)](https://aclanthology.org/2021.acl-short.123/) | [NQ (DPR)]() | 32x | 0.201 |
-| BPR | [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/nthakur20/bpr-base-msmarco-distilbert-tas-b)  | 32x|  0.357 |
-| JPQ | [(Zhan et al., 2021)](https://dl.acm.org/doi/10.1145/3459637.3482358) | STAR [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-roberta-star) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-roberta-star) | 32x| 0.389 |
-| JPQ | [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b)  | 32x | 0.402 |
+| BPR [(Yamada et al., 2021)](https://aclanthology.org/2021.acl-short.123/) | [NQ (DPR)]() | 32 x | 0.201 |
+| BPR [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/nthakur20/bpr-base-msmarco-distilbert-tas-b)  | 32 x |  0.357 |
+| JPQ [(Zhan et al., 2021)](https://dl.acm.org/doi/10.1145/3459637.3482358) | STAR [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-roberta-star) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-roberta-star) | 32 x | 0.389 |
+| JPQ [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b)  | 32 x | 0.402 |
 
 
 ## :dollar: Quick Example
