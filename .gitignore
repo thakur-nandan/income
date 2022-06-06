@@ -7,6 +7,7 @@
 **/jpqtower/
 **/faiss-index/
 **/faiss/
+**/output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
