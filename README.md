@@ -3,7 +3,7 @@
 </h1>
 
 ## :dollar: What is it?
-Index Compression Methods (INCOME) repository helps you train and evaluate diverse memory efficient dense retrievers across any custom dataset. We provide effective techniques for unsupervised domain-adaptation training, open-sourced models and easy evaluation code. 
+Index Compression Methods (INCOME) repository helps you easily train and evaluate different **memory efficient** dense retrievers across any custom dataset. We support all popular compressed dense retriever methods and provide effective techniques for unsupervised domain-adaptation training, open-sourced models and easy evaluation code. 
 
 We currently support the following memory efficient dense retriever model architectures: 
 - [BPR: Binary Passage Retriever](https://aclanthology.org/2021.acl-short.123/) (ACL 2021)
@@ -30,14 +30,18 @@ With that, you should be ready to go!
 
 We currently support training and inference of these compressed dense retrievers within our repository:
 
-|   | Models (on HF)| Memory Compr. | BEIR (Avg. NDCG@10) |
-|:---:|:----:|:----:|:----:|
+|   | Models (on HF)| Memory Compr. | BEIR (Avg. NDCG@10) | Index Size | GCP Cloud | Cost per. Month (in \$) |
+|:---:|:----:|:----:|:----:|:----:|:----:|:----:|
+| **No Compression** |
+| TAS-B [(Hofstatter et al., 2021)](https://arxiv.org/abs/2104.06967) | [TAS-B](https://huggingface.co/sentence-transformers/msmarco-distilbert-base-tas-b) | 1 x | 0.413 | 65 GB | n2-highmem-8 | \$306.05 |   
 | **Supervised Compression** |
-| BPR [(Yamada et al., 2021)](https://aclanthology.org/2021.acl-short.123/) | [NQ (DPR)]() | 32 x | 0.201 |
-| BPR [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/nthakur20/bpr-base-msmarco-distilbert-tas-b)  | 32 x |  **0.357** |
-| JPQ [(Zhan et al., 2021)](https://dl.acm.org/doi/10.1145/3459637.3482358) | STAR [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-roberta-star) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-roberta-star) | 32 x | 0.389 |
-| JPQ [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b)  | 32 x | **0.402** |
+| BPR [(Yamada et al., 2021)](https://aclanthology.org/2021.acl-short.123/) | [NQ (DPR)]() | 32 x | 0.201 | 2.2 GB | n1-standard-1 | \$24.27 |
+| BPR [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/nthakur20/bpr-base-msmarco-distilbert-tas-b)  | 32 x |  **0.357** | 2.2 GB | n1-standard-1 | \$24.27 |
+| JPQ [(Zhan et al., 2021)](https://dl.acm.org/doi/10.1145/3459637.3482358) | STAR [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-roberta-star) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-roberta-star) | 32 x | 0.389 | 2.2 GB | n1-standard-1 | \$24.27 |
+| JPQ [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b)  | 32 x | **0.402** | 2.2 GB | n1-standard-1 | \$24.27 |
 
+The Index size and costs are estimated for a user who wants to build a semantic search engine over the English Wikipedia containing about 21 million passages you need to encode. 
+Using float16 (and no further compression techniques) and 384 dimensions, the resulting embeddings have a size of about 16GB
 
 ## :dollar: Quick Example
 
