@@ -42,7 +42,7 @@ from beir import util, LoggingHandler
 from beir.datasets.data_loader import GenericDataLoader
 from beir.retrieval.evaluation import EvaluateRetrieval
 from beir.retrieval.search.dense import BinaryFaissSearch
-from income.bpr.model import BinarySentenceBERT
+from income.bpr.model import BPR
 
 import logging
 import pathlib, os
@@ -59,7 +59,7 @@ logging.basicConfig(format='%(asctime)s - %(message)s',
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, required=True)
-parser.add_argument("--model_path", type=str, default="nthakur20/bpr-base-msmarco-distilbert-tas-b")
+parser.add_argument("--model_path", type=str, default="income/bpr-base-msmarco-distilbert-tas-b")
 args = parser.parse_args()
 
 #### Download scifact.zip dataset and unzip the dataset
@@ -84,7 +84,7 @@ corpus, queries, qrels = GenericDataLoader(data_folder=data_path).load(split="te
 # The model was fine-tuned using CLS Pooling and dot-product!
 # Open-sourced binary code SBERT model trained on MSMARCO to be made available soon!
 
-model = BinarySentenceBERT(model_path)
+model = BPR(model_path)
 faiss_search = BinaryFaissSearch(model, batch_size=128)
 
 #### Load faiss index from file or disk ####

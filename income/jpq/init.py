@@ -4,7 +4,7 @@ Encoding part is modified base on
     https://github.com/jingtaozhan/DRhard/blob/main/star/inference.py (SIGIR'21)
 '''
 
-from .models.backbones import DistilBertDot, RobertaDot
+from .models.backbones import DistilBertDot, RobertaDot, BertDot
 from .dataset import (
     TextTokenIdsCache, SequenceDataset,
     get_collate_function
@@ -109,6 +109,11 @@ def init(
             config = AutoConfig.from_pretrained(model_dir, gradient_checkpointing=False)
             model = DistilBertDot.from_pretrained(model_dir, config=config)
         
+        elif backbone == "bert":
+            logger.info("Loading Model for encoding passages: {} ...".format(model_dir))
+            config = AutoConfig.from_pretrained(model_dir, gradient_checkpointing=False)
+            model = BertDot.from_pretrained(model_dir, config=config)
+
         elif backbone == "roberta":
             logger.info("Loading Model for encoding passages: {} ...".format(model_dir))
             config = RobertaConfig.from_pretrained(model_dir, gradient_checkpointing=False)
@@ -158,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", type=str, required=True)
     parser.add_argument("--subvector_num", type=int, required=True)
     parser.add_argument("--model_dir", type=str, default="sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco")
-    parser.add_argument("--backbone", type=str, default="distilbert", choices=["disilbert", "roberta"])
+    parser.add_argument("--backbone", type=str, required=True, choices=["distilbert", "bert", "roberta"])
     parser.add_argument("--max_doc_length", type=int, default=512)
     parser.add_argument("--eval_batch_size", type=int, default=128)
     parser.add_argument("--doc_embed_size", type=int, default=768)

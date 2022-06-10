@@ -8,28 +8,40 @@ from torch import nn, Tensor
 from tqdm.autonotebook import trange
 from typing import List, Dict, Union, Tuple
 
-from transformers import DistilBertModel
-from transformers.models.distilbert.modeling_distilbert import DistilBertPreTrainedModel
+from transformers import BertModel
+from transformers.models.bert.modeling_bert import BertPreTrainedModel
 
 from .util import pack_tensor_2D, batch_to_device
 from transformers import AutoTokenizer
 
 logger = logging.getLogger(__name__)
 
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output.last_hidden_state
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
-class DistilBertDot(DistilBertPreTrainedModel):
-    def __init__(self, config):
-        DistilBertPreTrainedModel.__init__(self, config)
-        self.distilbert = DistilBertModel(config)
-        self.apply(self._init_weights)               
+class BertDot(BertPreTrainedModel):
+    def __init__(self, config, pooling="mean"):
+        BertPreTrainedModel.__init__(self, config)
+        self.bert = BertModel(config, add_pooling_layer=False)
+        if not hasattr(config, "pooling"):
+            self.config.pooling = pooling
     
-    def forward(self, input_ids, attention_mask):
-        outputs1 = self.distilbert(input_ids=input_ids,
-                                attention_mask=attention_mask)
-        return outputs1[0][:, 0]
+    def forward(self, input_ids, attention_mask, normalize=False):
+        outputs = self.bert(input_ids, attention_mask, return_dict=True)
+        
+        if self.config.pooling == "cls":
+            emb = outputs.last_hidden_state[:, 0]
+        elif self.config.pooling == "mean":
+            emb = mean_pooling(outputs, attention_mask)
 
+        if normalize:
+            emb = torch.nn.functional.normalize(emb, dim=-1)
+        
+        return emb
 
-class JPQTowerDistilBert(DistilBertDot):
+class JPQTowerBert(BertDot):
     def __init__(self, config, max_input_length=512):
         super().__init__(config)
         assert config.hidden_size % config.MCQ_M == 0
@@ -95,10 +107,12 @@ class JPQTowerDistilBert(DistilBertDot):
         for start_index in trange(0, len(texts), batch_size, desc="Batches", disable=not show_progress_bar):
             sentences_batch = texts[start_index:start_index+batch_size]
             features = self.tokenize(sentences_batch)
+            del features['token_type_ids']
             features = batch_to_device(features, device)
 
             with torch.no_grad():
                 embeddings = self.forward(**features)
+
                 embeddings = embeddings.detach().cpu().numpy()
 
                 if index is None:

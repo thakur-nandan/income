@@ -1,4 +1,4 @@
-from .backbones import JPQTowerDistilBert, JPQTowerRoberta
+from .backbones import JPQTowerDistilBert, JPQTowerRoberta, JPQTowerBert
 from .util import download_url
 from typing import Tuple, List, Dict
 
@@ -15,7 +15,7 @@ class JPQDualEncoder:
                  **kwargs):
         self.sep = sep
         self.backbone = backbone.lower()
-        self.tower = {'distilbert': JPQTowerDistilBert, 'roberta': JPQTowerRoberta}
+        self.tower = {'distilbert': JPQTowerDistilBert, 'roberta': JPQTowerRoberta, 'bert': JPQTowerBert}
         self.q_model = self.tower[self.backbone].from_pretrained(model_path[0])
         self.doc_model = self.tower[self.backbone].from_pretrained(model_path[1])
         self.faiss_path = faiss_path

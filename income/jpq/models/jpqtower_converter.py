@@ -1,4 +1,4 @@
-from .backbones import JPQTowerDistilBert, JPQTowerRoberta
+from .backbones import JPQTowerDistilBert, JPQTowerRoberta, JPQTowerBert
 from transformers import AutoConfig
 
 import faiss
@@ -50,6 +50,13 @@ def convert_to_jpqtower(query_encoder_model, doc_encoder_model, query_faiss_inde
             config.name_or_path = output_path
             config.MCQ_M, config.MCQ_K = ivf_index.pq.M, ivf_index.pq.ksub
             model = JPQTowerDistilBert.from_pretrained(model_path, config=config)
+        
+        elif backbone == "bert":
+            logger.info("Loading JPQ model: {}".format(model_path))
+            config = AutoConfig.from_pretrained(model_path)
+            config.name_or_path = output_path
+            config.MCQ_M, config.MCQ_K = ivf_index.pq.M, ivf_index.pq.ksub
+            model = JPQTowerBert.from_pretrained(model_path, config=config)
 
         elif backbone == "roberta":
             logger.info("Loading JPQ model: {}".format(model_path))
@@ -77,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument("--doc_faiss_index", type=str, required=True)
     parser.add_argument("--M", type=int, default=96)
     parser.add_argument("--model_output_dir", type=str, required=True)
-    parser.add_argument("--backbone", type=str, required=True, choices=["roberta", "distilbert"])
+    parser.add_argument("--backbone", type=str, required=True, choices=["roberta", "distilbert", "bert"])
     parser.add_argument("--prefix", type=str, default=None)
 
     args = parser.parse_args()

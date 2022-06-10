@@ -112,6 +112,7 @@ def write_query_rel(args, pid2offset, qid2offset_file, query_file, positive_id_f
     qid2offset = {}
 
     logger.info('Start query file split processing')
+    logger.info("Tokenizer: {}".format(args.tokenizer))
     splits_dir_lst, _ = multi_file_process(
         args, args.threads, query_collection_path,
         out_query_path, QueryPreprocessingFn,
@@ -196,7 +197,8 @@ def preprocess(args):
         logger.info("preprocessed data already exist, exit preprocessing")
         return
 
-    logger.info('start passage file split processing')
+    logger.info('Start passage file split processing')
+    logger.info("Tokenizer: {}".format(args.tokenizer))
     splits_dir_lst, all_linecnt = multi_file_process(
         args, args.threads, in_passage_path,
         out_passage_path, PassagePreprocessingFn,
@@ -323,8 +325,7 @@ def get_arguments():
     parser.add_argument(
         "--tokenizer",
         type=str,
-        default="sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco",
-        choices=["sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco", "roberta-base"],
+        required=True,
         help="tokenizer to use for encoding, default: sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco",
     )
     parser.add_argument(
