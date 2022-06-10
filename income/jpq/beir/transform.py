@@ -29,7 +29,11 @@ def transform(
     else:
         data_path = os.path.join(beir_data_root, dataset)
     
-    corpus, queries, qrels = GenericDataLoader(data_path, prefix=prefix).load(split=split)
+    if prefix:
+        corpus, queries, qrels = GenericDataLoader(data_path, prefix=prefix).load(split=split)
+    else:
+        corpus, queries, qrels = GenericDataLoader(data_path).load(split=split)
+    
     corpus_ids, query_ids = list(corpus), list(queries)
     doc_map, query_map = {}, {}
 
