@@ -5,6 +5,8 @@
 ## :dollar: What is it?
 Index Compression Methods (INCOME) repository helps you easily train and evaluate different **memory efficient** dense retrievers across any custom dataset. We support all popular compressed dense retriever methods and provide effective techniques for unsupervised domain-adaptation training, open-sourced models and easy evaluation code. 
 
+The pre-trained models produce float embeddings of sizes from 512 till 1024. However, when storing a large number of embeddings, this requires quite a lot of memory / storage. We focus on compression in this repository and produce final embeddings which are binary and require less dimensions which help you save both storage and money on hosting models.
+
 We currently support the following memory efficient dense retriever model architectures: 
 - [BPR: Binary Passage Retriever](https://aclanthology.org/2021.acl-short.123/) (ACL 2021)
 - [JPQ: Jointly Optimizing Query Encoder and Product Quantization to Improve Retrieval Performance](https://dl.acm.org/doi/10.1145/3459637.3482358) (CIKM 2021)
