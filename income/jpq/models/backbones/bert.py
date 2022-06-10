@@ -16,50 +16,29 @@ from transformers import AutoTokenizer
 
 logger = logging.getLogger(__name__)
 
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output.last_hidden_state
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
 class BertDot(BertPreTrainedModel):
-    def __init__(self, config, pooling="average", **kwargs):
+    def __init__(self, config, pooling="mean"):
         BertPreTrainedModel.__init__(self, config)
         self.bert = BertModel(config, add_pooling_layer=False)
         if not hasattr(config, "pooling"):
             self.config.pooling = pooling
-
-    def forward(
-        self,
-        input_ids,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        encoder_hidden_states=None,
-        encoder_attention_mask=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        normalize=False,
-    ):
-
-        model_output = self.bert(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            token_type_ids=token_type_ids,
-            position_ids=position_ids,
-            head_mask=head_mask,
-            inputs_embeds=inputs_embeds,
-            encoder_hidden_states=encoder_hidden_states,
-            encoder_attention_mask=encoder_attention_mask,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-        )
-
-        last_hidden = model_output[0]
-
-        if self.config.pooling == "average":
-            emb = last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
-        elif self.config.pooling == "cls":
-            emb = last_hidden[:, 0]
+    
+    def forward(self, input_ids, attention_mask, normalize=False):
+        outputs = self.bert(input_ids, attention_mask, return_dict=True)
+        
+        if self.config.pooling == "cls":
+            emb = outputs.last_hidden_state[:, 0]
+        elif self.config.pooling == "mean":
+            emb = mean_pooling(outputs, attention_mask)
 
         if normalize:
             emb = torch.nn.functional.normalize(emb, dim=-1)
+        
         return emb
 
 class JPQTowerBert(BertDot):
@@ -128,10 +107,10 @@ class JPQTowerBert(BertDot):
         for start_index in trange(0, len(texts), batch_size, desc="Batches", disable=not show_progress_bar):
             sentences_batch = texts[start_index:start_index+batch_size]
             features = self.tokenize(sentences_batch)
+            del features['token_type_ids']
             features = batch_to_device(features, device)
 
             with torch.no_grad():
-                print(features)
                 embeddings = self.forward(**features)
 
                 embeddings = embeddings.detach().cpu().numpy()
