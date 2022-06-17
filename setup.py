@@ -5,7 +5,7 @@ with open("README.md", mode="r", encoding="utf-8") as readme_file:
 
 setup(
     name='income',
-    version='0.0.1',
+    version='0.0.2',
     author="Nandan Thakur",
     author_email="nandant@gmail.com",
     description='Domain Adaptation for Memory-Efficient Dense Retrieval',
@@ -13,7 +13,7 @@ setup(
     long_description_content_type="text/markdown",
     license="Apache License 2.0",
     url='https://github.com/NThakur20/income',
-    download_url="https://github.com/NThakur20/income/archive/v0.0.1.zip",
+    download_url="https://github.com/NThakur20/income/archive/v0.0.2.zip",
     packages=find_packages(),
     python_requires='>=3.6',
     classifiers=[
