@@ -3,7 +3,11 @@
 </h1>
 
 ## :dollar: What is it?
-Index Compression Methods (INCOME) repository helps you easily train and evaluate different **memory efficient** dense retrievers across any custom dataset. The pre-trained models produce float embeddings of sizes from 512 to even upto 1024. However, when storing a large number of embeddings, this requires quite a lot of memory / storage. We focus on index compression and produce final embeddings which are binary and require less dimensions which help you **save both storage and money** on hosting such models in practical setup.
+Index Compression Methods (INCOME) repository helps you easily train and evaluate different **memory efficient** dense retrievers across any custom dataset. The pre-trained models produce float embeddings of sizes from between 512 - 1024. However, when storing a large number of embeddings within an index for fast inference, this requires quite a lot of memory / storage. 
+
+
+In this repository, we focus on index compression and provide models which produce binary embeddings i.e. 1 or -1 which require less dimensions and help you **save both storage and money** on hosting such models in a practical setup with limited money.
+
 
 We currently support the following memory efficient dense retriever model architectures: 
 - [BPR: Binary Passage Retriever](https://aclanthology.org/2021.acl-short.123/) (ACL 2021)
@@ -11,7 +15,6 @@ We currently support the following memory efficient dense retriever model archit
 
 For more information, checkout our publication:
 - [Domain Adaptation for Memory-Efficient Dense Retrieval](https://arxiv.org/abs/2205.11498/) (Arxiv preprint)
-
 
 ## :dollar: Installation
 One can either install income via `pip`
@@ -28,62 +31,45 @@ With that, you should be ready to go!
 
 ## :dollar: Models Supported
 
-We currently support training and inference of these compressed dense retrievers within our repository:
+We currently support training and inference of these compressed dense retrievers within our repository. We compare the performance and cost of hosting these models below:
 
-|   | Models (on HF)| BEIR (Avg. NDCG@10) | Memory Size | Query Time | GCP Cloud | Cost per. Month (in \$) |
-|:---:|:----:|:----:|:----:|:----:|:----:|:----:|
+|   | Backbone| MSMARCO | BEIR | Memory Size | Query Time | GCP Cloud | Cost per. Month (in \$) |
+|:---:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
 | **No Compression** |
-| TAS-B [(Hofstatter et al., 2021)](https://arxiv.org/abs/2104.06967) | [TAS-B](https://huggingface.co/sentence-transformers/msmarco-distilbert-base-tas-b) | 0.415 | 65 GB (1x) | 456.9 ms | n2-highmem-8 | \$306.05 |   
-| TAS-B + HNSW [(Hofstatter et al., 2021)](https://arxiv.org/abs/2104.06967) | [TAS-B](https://huggingface.co/sentence-transformers/msmarco-distilbert-base-tas-b) | 0.415 | 151 GB (1x) | 1.8 ms | n2-highmem-32 | \$1224.19 |
-| TAS-B + PQ [(Hofstatter et al., 2021)](https://arxiv.org/abs/2104.06967) | [TAS-B](https://huggingface.co/sentence-transformers/msmarco-distilbert-base-tas-b) | 0.361 | 2 GB (32x) | 44.0 ms | n1-standard-1 | \$24.27 |   
-| **Supervised Compression** |
-| BPR [(Yamada et al., 2021)](https://aclanthology.org/2021.acl-short.123/) | [NQ (DPR)]() | 0.201 | 2.2 GB (32x) | 38.1 ms | n1-standard-1 | \$24.27 |
-| BPR [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/nthakur20/bpr-base-msmarco-distilbert-tas-b)  |  **0.357** | 2.2 GB (32x) | 38.1 ms |n1-standard-1 | \$24.27 |
-| JPQ [(Zhan et al., 2021)](https://dl.acm.org/doi/10.1145/3459637.3482358) | STAR [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-roberta-star) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-roberta-star) | 0.389 | 2.2 GB (32x) | 44.0 ms | n1-standard-1 | \$24.27 |
-| JPQ [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b)  | **0.402** | 2.2 GB (32x) | 44.0 ms | n1-standard-1 | \$24.27 |
+| TAS-B [(Hofstatter et al., 2021)](https://arxiv.org/abs/2104.06967) | [TAS-B](https://huggingface.co/sentence-transformers/msmarco-distilbert-base-tas-b) | 0.408 | 0.415 | 65 GB (1x) | 456.9 ms | n2-highmem-8 | \$306.05 |   
+| TAS-B + HNSW [(Hofstatter et al., 2021)](https://arxiv.org/abs/2104.06967) | [TAS-B](https://huggingface.co/sentence-transformers/msmarco-distilbert-base-tas-b)| 0.408 | 0.415 | 151 GB (1x) | 1.8 ms | n2-highmem-32 | \$1224.19 |
+| TAS-B + PQ [(Hofstatter et al., 2021)](https://arxiv.org/abs/2104.06967) | [TAS-B](https://huggingface.co/sentence-transformers/msmarco-distilbert-base-tas-b) | 0.358 | 0.361 | 2 GB (32x) | 44.0 ms | n1-standard-1 | \$24.27 |   
+| **Supervised Compression: BPR** |
+| BPR (TAS-B) [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/income/bpr-base-msmarco-distilbert-tas-b)  | 0.397 |  0.357 | 2.2 GB (32x) | 38.1 ms |n1-standard-1 | \$24.27 |
+| BPR+GenQ (TAS-B) [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/income/)  | 0.397 | 0.377  | 2.2 GB (32x) | 38.1 ms |n1-standard-1 | \$24.27 |
+| BPR+GPL (TAS-B) [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | [TAS-B](https://huggingface.co/income/)  | 0.397 |  **0.398** | 2.2 GB (32x) | 38.1 ms |n1-standard-1 | \$24.27 |
+| **Supervised Compression: JPQ** |
+| JPQ (TAS-B) [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/income/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/income/jpq-document_encoder-base-msmarco-distilbert-tas-b) | 0.400  | 0.402 | 2.2 GB (32x) | 44.0 ms | n1-standard-1 | \$24.27 |
+| JPQ+GenQ (TAS-B) [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/income/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/income/jpq-document_encoder-base-msmarco-distilbert-tas-b) | 0.400  | 0.417 | 2.2 GB (32x) | 44.0 ms | n1-standard-1 | \$24.27 |
+| JPQ+GPL (TAS-B) [(Thakur et al., 2022)](https://arxiv.org/abs/2205.11498) | TAS-B [(query)](https://huggingface.co/income/jpq-question_encoder-base-msmarco-distilbert-tas-b) [(doc)](https://huggingface.co/income/jpq-document_encoder-base-msmarco-distilbert-tas-b) | 0.400  | **0.435** | 2.2 GB (32x) | 44.0 ms | n1-standard-1 | \$24.27 |
 
-The Index size and costs are estimated for a user who wants to build a semantic search engine over the English Wikipedia containing about 21 million passages you need to encode. 
+The scores denote the NDCG@10 performance of the model. The Index size and costs are estimated for a user who wants to build a semantic search engine over the English Wikipedia containing about 21 million passages you need to encode. 
 Using float32 (and no further compression techniques) and 768 dimensions, the resulting embeddings have a size of about 65GB. The ``n2-highmem-8`` server can provide upto 64 GB of memory, whereas the ``n1-standard-1`` server can provide upto 3.75 GB of memory. 
 
-## :dollar: Reproduction Scripts with TAS-B
+## :dollar: Easily compress your dense retriever
 
-|   | Script | BEIR (Avg. NDCG@10) | Memory Size |
-|:---:|:----:|:----:|:----:|
-| **Baselines** |
-| fp-16 | [evaluate_fp16.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_fp16.py) | 0.414  | 33 GB (2x)   |
-| fp-8 | [evaluate_fp16.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_fp16.py)  | 0.407  | 16 GB (4x)   |
-| PCA  | [evaluate_pca.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_pca.py)    | 0.235  | 22 GB (3x)   |
-| TLDR | [evaluate_pca.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_pca.py)    | 0.240  | 22 GB (3x)   |
-| PQ   | [evaluate_pq.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_pq.py)      | 0.361  | 2.2 GB (32x) |    
-| **Supervised Compression**|
-| BPR   | [bpr_beir_evaluation.py](https://github.com/NThakur20/income/blob/development/examples/bpr/evaluation/bpr_beir_evaluation.py) | 0.357  | 2.2 GB (32x) |
-| JPQ   | [jpq_beir_evaluation.py](https://github.com/NThakur20/income/blob/development/examples/jpq/evaluation/jpq_beir_evaluation.py) | 0.402  | 2.2 GB (32x) |
+Our technique can easily wrap around any HF-based dense retriever and convert them into a BPR or JPQ based model. Overall, we find the stronger the backbone dense retriever in generalization, the better the BPR and JPQ models. We recently converted these new models and made them available publicly on HF. Incase, you wish to convert your model open a pull request or follow the scripts below for BPR and JPQ seperately.
+
+|   | Backbone| MSMARCO | BEIR | Memory Size | Query Time | GCP Cloud | Cost per. Month (in \$) |
+|:---:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|  
+| **Supervised Compression** |
+| BPR (Contriever) [(Izacard et al., 2021)](https://arxiv.org/abs/2112.09118) | [Contriever](https://huggingface.co/income/bpr-base-msmarco-contriever) | 0.407 | 0.367 | 2.2 GB (32x) | 38.1 ms | n1-standard-1 | \$24.27 |
+| BPR (DPR) [(Yamada et al., 2021)](https://aclanthology.org/2021.acl-short.123/) | [NQ (DPR)]() | 0.130 | 0.201 | 2.2 GB (32x) | 38.1 ms | n1-standard-1 | \$24.27 |
+| JPQ (STAR) [(Zhan et al., 2021)](https://dl.acm.org/doi/10.1145/3459637.3482358) | STAR [(query)](https://huggingface.co/income/jpq-question_encoder-base-msmarco-roberta-star) [(doc)](https://huggingface.co/income/jpq-document_encoder-base-msmarco-roberta-star) | 0.402 | 0.389 | 2.2 GB (32x) | 44.0 ms | n1-standard-1 | \$24.27 |
 
 
-## :dollar: Why should we do domain adaptation?
+## :dollar: Using the INCOME library
+The ``income`` library can be used to learn various different vector compression strategies for information retrieval. These can be used 
 
-![](images/domain-adaptation.png)
+## :dollar: BPR Model (Getting Started)
+This section would introduce few quick examples to train and evaluate BPR models on any custom data you wish to search on.
 
-
-|   | Script | BEIR (Avg. NDCG@10) | Memory Size |
-|:---:|:----:|:----:|:----:|   
-| **Supervised Compression**|
-| BPR+GenQ  | [train_bpr_genq.sh](https://github.com/NThakur20/income/blob/development/examples/bpr/training/train_bpr_genq.sh) | 0.377 | 2.2 GB (32x) |
-| BPR+GPL   | [train_bpr_gpl.sh](https://github.com/NThakur20/income/blob/development/examples/bpr/training/train_bpr_gpl.sh) | 0.398  | 2.2 GB (32x) |
-| JPQ+GenQ  | [train_jpq_genq.sh](https://github.com/NThakur20/income/blob/development/examples/jpq/training/train_jpq_genq.sh) | 0.417 | 2.2 GB (32x) |
-| JPQ+GPL   | [train_jpq_gpl.sh](https://github.com/NThakur20/income/blob/development/examples/jpq/training/train_jpq_gpl.sh) | 0.435  | 2.2 GB (32x) |
-
-
-## :dollar: Why should we do domain adaptation?
-
-
-
-## :dollar: Inference
-
-
-## :dollar: Training
-
-### :dollar: BPR
+### Training using GPL: Generative Pseudo Labeling
 
 ```bash
 export dataset="nfcorpus"
@@ -108,9 +94,131 @@ python -m income.bpr.train \
     --use_amp   # Use this for efficient training if the machine supports AMP
 ```
 
-### :dollar: JPQ
+### Inference
+
+```python
+from beir.datasets.data_loader import GenericDataLoader
+from beir.retrieval.evaluation import EvaluateRetrieval
+from beir.retrieval.search.dense import BinaryFaissSearch
+from beir import util
+from income.bpr.model import BPR
+
+dataset = "nfcorpus"
+url = "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{}.zip".format(dataset)
+out_dir = os.path.join(pathlib.Path(__file__).parent.absolute(), "datasets")
+data_path = util.download_and_unzip(url, out_dir)
+
+corpus, queries, qrels = GenericDataLoader(data_folder=data_path).load(split="test")
+faiss_search = BinaryFaissSearch(BPR("income/bpr-base-msmarco-distilbert-tas-b"), batch_size=128)
+
+retriever = EvaluateRetrieval(faiss_search, score_function="dot")
+results = retriever.retrieve(corpus, queries, rerank=True, binary_k=1000)
+ndcg, _map, recall, precision = retriever.evaluate(qrels, results, retriever.k_values)
+```
+
+## :dollar: JPQ Model (Getting Started)
+
+This section would introduce few quick examples to train and evaluate JPQ models on any custom data you wish to search on.
+
+### Training using GPL: Generative Pseudo Labeling
+
+Training using JPQ and GPL occurs in four steps:
+
+1. Preprocess Dataset to JPQ-friendly format
+```bash
+export dataset="nfcorpus"
+export PREFIX="gen"
+
+python -m income.jpq.beir.transform \
+          --dataset ${dataset} \
+          --output_dir "./datasets/${dataset}" \
+          --prefix  ${PREFIX} \
+```
+2. Preprocessing Script tokenizes the queries and corpus
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m income.jpq.preprocess \
+                                --data_dir "./datasets/${dataset}" \
+                                --out_data_dir "./preprocessed/${dataset}"
+    
+```
+3. INIT script trains the IVFPQ corpus faiss index
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m income.jpq.init \
+  --preprocess_dir "./preprocessed/${dataset}" \
+  --model_dir "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco"
+  --max_doc_length 350 \
+  --output_dir "./init/${dataset}" \
+  --subvector_num 96
+```
+4. TRAIN script trains TAS-B using Generative Pseudo Labeling (GPL)
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m income.jpq.train_gpl \
+    --preprocess_dir "./preprocessed/${dataset}" \
+    --model_save_dir "./final_models/${dataset}/gpl" \
+    --log_dir "./logs/${dataset}/log" \
+    --init_index_path "./init/${dataset}/OPQ96,IVF1,PQ96x8.index" \
+    --init_model_path "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
+    --data_path "./datasets/${dataset}" \
+    --cross_encoder "cross-encoder/ms-marco-MiniLM-L-6-v2" \
+    --lambda_cut 200 \
+    --centroid_lr 1e-4 \
+    --train_batch_size 32 \
+    --num_train_epochs 2 \
+    --gpu_search \
+    --max_seq_length 64 \
+    --loss_neg_topK 25
+```
+5. Convert TAS-B trained model into JPQTower (Reqd. for inference)
+```bash
+python -m income.jpq.models.jpqtower_converter \
+        --query_encoder_model "./final_models/${dataset}/genq/epoch-1" \
+        --doc_encoder_model "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
+        --query_faiss_index "./final_models/${dataset}/genq/epoch-1/OPQ96,IVF1,PQ96x8.index" \
+        --doc_faiss_index "./init/${dataset}/OPQ96,IVF1,PQ96x8.index" \
+        --model_output_dir "./jpqtower/${dataset}/"
+```
+### Inference
+```python
+from income.jpq.models import JPQDualEncoder
+from income.jpq.search import DenseRetrievalJPQSearch as DRJS
+from beir.datasets.data_loader import GenericDataLoader
+from beir.retrieval.evaluation import EvaluateRetrieval
+from beir import util
+
+dataset = "nfcorpus"
+url = "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{}.zip".format(dataset)
+out_dir = os.path.join(pathlib.Path(__file__).parent.absolute(), "datasets")
+data_path = util.download_and_unzip(url, out_dir)
+
+corpus, queries, qrels = GenericDataLoader(data_folder=data_path).load(split="test")
+model = DRJS(JPQDualEncoder((
+    "income/jpq-question_encoder-base-msmarco-distilbert-tas-b", 
+    "income/jpq-document_encoder-base-msmarco-distilbert-tas-b"
+  ), backbone="distilbert"))
+
+retriever = EvaluateRetrieval(model, score_function="dot") 
+results = retriever.retrieve(corpus, queries)
+ndcg, _map, recall, precision = retriever.evaluate(qrels, results, retriever.k_values)
+```
+
+## :dollar: Reproduction Scripts with TAS-B
+
+|   | Script | BEIR (Avg. NDCG@10) | Memory Size |
+|:---:|:----:|:----:|:----:|
+| **Baselines** |
+| fp-16 | [evaluate_fp16.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_fp16.py) | 0.414  | 33 GB (2x)   |
+| fp-8 | [evaluate_fp16.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_fp16.py)  | 0.407  | 16 GB (4x)   |
+| PCA  | [evaluate_pca.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_pca.py)    | 0.235  | 22 GB (3x)   |
+| TLDR | [evaluate_pca.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_pca.py)    | 0.240  | 22 GB (3x)   |
+| PQ   | [evaluate_pq.py](https://github.com/NThakur20/income/blob/development/examples/baselines/evaluate_pq.py)      | 0.361  | 2.2 GB (32x) |    
+| **Supervised Compression**|
+| BPR   | [bpr_beir_evaluation.py](https://github.com/NThakur20/income/blob/development/examples/bpr/evaluation/bpr_beir_evaluation.py) | 0.357  | 2.2 GB (32x) |
+| JPQ   | [jpq_beir_evaluation.py](https://github.com/NThakur20/income/blob/development/examples/jpq/evaluation/jpq_beir_evaluation.py) | 0.402  | 2.2 GB (32x) |
 
 
+## :dollar: Why should we do domain adaptation?
+
+![](images/domain-adaptation.png)
 
 
 

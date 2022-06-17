@@ -19,23 +19,25 @@ logging.basicConfig(format='%(asctime)s - %(message)s',
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, required=True)
 
-#### TAS-B (DistilBERT) backbone based JPQ question and document encoders
-# parser.add_argument("--query_encoder", type=str, default="nthakur20/jpq-question_encoder-base-msmarco-distilbert-tas-b")
-# parser.add_argument("--doc_encoder", type=str, default="nthakur20/jpq-document_encoder-base-msmarco-distilbert-tas-b")
-# parser.add_argument("--backbone", type=str, default='distilbert', choices=['distilbert', 'roberta', 'bert'])
+### TAS-B (DistilBERT) backbone based JPQ question and document encoders
+parser.add_argument("--query_encoder", type=str, default="income/jpq-question_encoder-base-msmarco-distilbert-tas-b")
+parser.add_argument("--doc_encoder", type=str, default="income/jpq-document_encoder-base-msmarco-distilbert-tas-b")
+parser.add_argument("--backbone", type=str, default='distilbert', choices=['distilbert', 'roberta', 'bert'])
 
 #### STAR (Roberta) backbone based JPQ question and document encoders
-# parser.add_argument("--query_encoder", type=str, default="nthakur20/jpq-question_encoder-base-msmarco-roberta-star")
-# parser.add_argument("--doc_encoder", type=str, default="nthakur20/jpq-document_encoder-base-msmarco-roberta-star")
-# parser.add_argument("--backbone", type=str, default='roberta', choices=['distilbert', 'roberta'])
+# parser.add_argument("--query_encoder", type=str, default="income/jpq-question_encoder-base-msmarco-roberta-star")
+# parser.add_argument("--doc_encoder", type=str, default="income/jpq-document_encoder-base-msmarco-roberta-star")
+# parser.add_argument("--backbone", type=str, default='roberta', choices=['distilbert', 'roberta', 'bert'])
 
-parser.add_argument("--query_encoder", type=str, default="/home/ukp/thakur/projects/income/jpqtower/scifact/jpqtower-bert-query")
-parser.add_argument("--doc_encoder", type=str, default="/home/ukp/thakur/projects/income/jpqtower/scifact/jpqtower-bert-doc")
-parser.add_argument("--backbone", type=str, default='bert', choices=['distilbert', 'roberta', 'bert'])
+#### Contriever (BERT) backbone based JPQ question and document encoders
+# parser.add_argument("--query_encoder", type=str, default="income/jpq-question_encoder-base-msmarco-contriever")
+# parser.add_argument("--doc_encoder", type=str, default="income/jpq-document_encoder-base-msmarco-contriever")
+# parser.add_argument("--backbone", type=str, default='bert', choices=['distilbert', 'roberta', 'bert'])
 
 parser.add_argument("--split", type=str, default='test')
 parser.add_argument("--encode_batch_size", type=int, default=64)
 parser.add_argument("--output_index_path", type=str, default=None)
+parser.add_argument("--prefix", type=str, default=None)
 args = parser.parse_args()
 
 #### Download scifact.zip dataset and unzip the dataset

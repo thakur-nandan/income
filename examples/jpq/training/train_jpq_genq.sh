@@ -6,9 +6,8 @@ do
     export PREFIX=gen
 
     #### (1) Convert BEIR dataset to JPQ Format ####
-    OMP_NUM_THREADS=6 python -m income.jpq.beir_transform \
+    OMP_NUM_THREADS=6 python -m income.jpq.beir.transform \
                       --dataset ${dataset} \
-                      --beir_data_root "/home/ukp/thakur/projects/sbert_retriever/datasets-new" \
                       --output_dir "./datasets/${dataset}" \
                       --prefix  ${PREFIX} \
 
@@ -18,7 +17,7 @@ do
                                     --out_data_dir "./preprocessed/${dataset}"
     
     #### (3) INIT script trains the IVFPQ corpus faiss index ####
-    CUDA_VISIBLE_DEVICES=${CudaNum} OMP_NUM_THREADS=6 python -m income.jpq.run_init \
+    CUDA_VISIBLE_DEVICES=${CudaNum} OMP_NUM_THREADS=6 python -m income.jpq.init \
         --preprocess_dir "./preprocessed/${dataset}" \
         --model_dir "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
         --max_doc_length 350 \
@@ -26,7 +25,7 @@ do
         --subvector_num 96
     
     #### (4) TRAIN script trains TAS-B using Generated Queries (GenQ) ####
-    CUDA_VISIBLE_DEVICES=${cudaNum} OMP_NUM_THREADS=6 python -m income.jpq.run_train_genq \
+    CUDA_VISIBLE_DEVICES=${cudaNum} OMP_NUM_THREADS=6 python -m income.jpq.train_genq \
         --preprocess_dir "./preprocessed/${dataset}" \
         --model_save_dir "./final_models/${dataset}/genq" \
         --log_dir "./logs/${dataset}/log" \
@@ -40,7 +39,7 @@ do
         --max_seq_length 64
 
     #### (5) Convert script converts TASBDot to JPQTower (Required for final evaluation) ####
-    OMP_NUM_THREADS=6 python -m income.jpq.robertadot_converter \
+    OMP_NUM_THREADS=6 python -m income.jpq.models.jpqtower_converter \
             --query_encoder_model "./final_models/${dataset}/genq/epoch-1" \
             --doc_encoder_model "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
             --query_faiss_index "./final_models/${dataset}/genq/epoch-1/OPQ96,IVF1,PQ96x8.index" \

@@ -35,14 +35,15 @@ print(model.encode_corpus(test_corpus))
   124 126 117 159  37 217]]
 '''
 
-Usage: python evaluate_bpr.py
+Usage: python evaluate_bpr.py --dataset nfcorpus
 """
 
-from beir import util, LoggingHandler
+from beir import util
 from beir.datasets.data_loader import GenericDataLoader
 from beir.retrieval.evaluation import EvaluateRetrieval
 from beir.retrieval.search.dense import BinaryFaissSearch
 from income.bpr.model import BPR
+from income import LoggingHandler
 
 import logging
 import pathlib, os
