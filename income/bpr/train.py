@@ -44,6 +44,7 @@ def train(
     generator: str = 'BeIR/query-gen-msmarco-t5-base-v1',
     cross_encoder: str = 'cross-encoder/ms-marco-MiniLM-L-6-v2',
     batch_size_gpl: int = 32,
+    batch_size_mnrl: int = 75,
     batch_size_generation: int = 32,
     pooling: str = None,
     max_seq_length: int = 350,
@@ -56,7 +57,7 @@ def train(
     negatives_per_query: int = 50,
     eval_split: str = 'test',
     use_train_qrels: bool = False,
-    gpl_score_function: str = 'dot',
+    base_score_function: str = 'dot',
     rescale_range: List[float] = None
 ):     
     #### Assertions ####
@@ -150,8 +151,8 @@ def train(
         pseudo_labeler.run()
     # Do rescaling if needed:
     if rescale_range is not None and len(rescale_range) == 2:
-        if gpl_score_function != 'cos_sim':
-            logger.warning(f'Doing rescaling while gpl_score_function = {gpl_score_function}')
+        if base_score_function != 'cos_sim':
+            logger.warning(f'Doing rescaling while base_score_function = {base_score_function}')
 
         new_min, new_max = rescale_range
         logger.info(f'Doing rescaling with new range [{new_min}, {new_max}]')
@@ -159,8 +160,8 @@ def train(
     else:
         # if len(rescale_range) != 2:
         #     logger.warning(f'len(rescale_range) should be 2')
-        if gpl_score_function == 'cos_sim':
-            logger.warning(f'Not do rescaling while gpl_score_function = {gpl_score_function}')
+        if base_score_function == 'cos_sim':
+            logger.warning(f'Not do rescaling while base_score_function = {base_score_function}')
 
     ### Train the model with MarginMSE loss ###
     #### This will be skipped if the checkpoint at the indicated training steps can be found ####
@@ -174,7 +175,7 @@ def train(
         logger.info(f'Load GPL training data from {fpath_gpl_data}')
         train_dataset = GenerativePseudoLabelingDataset(fpath_gpl_data, gen_queries, corpus)
         train_dataloader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size_gpl, drop_last=True)  # Here shuffle=False, since (or assuming) we have done it in the pseudo labeling
-        train_loss = BPRMarginDistillationLoss(model=model, similarity_fct=gpl_score_function)
+        train_loss = BPRMarginDistillationLoss(model=model, similarity_fct=base_score_function)
 
         # assert gpl_steps > 1000
         model.fit(
@@ -182,7 +183,7 @@ def train(
             epochs=1,
             steps_per_epoch=gpl_steps,
             warmup_steps=1000,
-            checkpoint_save_steps=10000,
+            checkpoint_save_steps=50000,
             checkpoint_save_total_limit=10000,
             output_path=output_dir,
             checkpoint_path=output_dir,
@@ -200,7 +201,7 @@ def train(
             evaluation_output, 
             ckpt_dir, 
             max_seq_length,
-            score_function=gpl_score_function,
+            score_function=base_score_function,
             pooling=pooling,
             split=eval_split
         )
@@ -212,12 +213,12 @@ def train(
         ckpt_dir = mnrl_output_dir
         if not os.path.exists(ckpt_dir) or (os.path.exists(ckpt_dir) and not os.listdir(ckpt_dir)):
             logger.info('Now training BPR on generated data using its original loss function')
-            mnrl(path_to_generated_data, base_ckpt, mnrl_output_dir, max_seq_length, use_amp, qgen_prefix)
+            mnrl(path_to_generated_data, base_ckpt, mnrl_output_dir, max_seq_length, batch_size_mnrl, use_amp, qgen_prefix, base_score_function)
         else:
             logger.info('Trained MNRL model found. Now skip training')
 
         logger.info('Doing evaluation for QGen (MNRL)')
-        evaluate(evaluation_data, mnrl_evaluation_output, ckpt_dir, max_seq_length, score_function='cos_sim', pooling=pooling, split=eval_split)
+        evaluate(evaluation_data, mnrl_evaluation_output, ckpt_dir, max_seq_length, score_function=base_score_function, pooling=pooling, split=eval_split)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -231,6 +232,7 @@ if __name__ == '__main__':
     parser.add_argument('--generator', default='BeIR/query-gen-msmarco-t5-base-v1')
     parser.add_argument('--cross_encoder', default='cross-encoder/ms-marco-MiniLM-L-6-v2')
     parser.add_argument('--batch_size_gpl', type=int, default=32)
+    parser.add_argument('--batch_size_mnrl', type=int, default=75)
     parser.add_argument('--batch_size_generation', type=int, default=10, help='Batch size in the query generation step.')
     parser.add_argument('--pooling', type=str, default=None, choices=['cls', 'mean', 'max'], help="Specifying pooling method for dense retriever if in Huggingface-format. By default (None), it uses mean pooling. If in SBERT-format, there would be the indicated pooling method in its configure file and thus this argument will be ignored. ")
     parser.add_argument('--max_seq_length', type=int, default=350)
@@ -240,7 +242,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_amp', action='store_true', default=False, help='Whether to use half precision')
     parser.add_argument('--retrievers', nargs='+', default=['msmarco-distilbert-base-v3', 'msmarco-MiniLM-L-6-v3'], help='Indicate retriever names for mining negatives. They could be one or many BM25 ("bm25") or dense retrievers (in SBERT format).')
     parser.add_argument('--retriever_score_functions', nargs='+', default=['cos_sim', 'cos_sim'], choices=['dot', 'cos_sim', 'none'], help='Score functions of the corresponding retrievers for negative mining. Please set it to "none" for BM25.')
-    parser.add_argument('--gpl_score_function', choices=['dot', 'cos_sim'], default='dot')
+    parser.add_argument('--base_score_function', choices=['dot', 'cos_sim'], default='dot')
     parser.add_argument('--rescale_range', nargs='+', type=float, default=None, help='Rescale the pseudo labels (i.e. score margins) to a certain range. For example, we can set this to "-2 2", which represents the margin range based on cosine-similarity. By default, it will not do rescaling.')
     parser.add_argument('--negatives_per_query', type=int, default=50, help="Mine how many negatives per query per retriever")
     parser.add_argument('--mnrl_output_dir', default=None)
