@@ -5,7 +5,7 @@ from .loss import BPRLoss
 import os
 
 
-def mnrl(data_path, base_ckpt, output_dir, max_seq_length=350, use_amp=True, qgen_prefix='qgen'):
+def mnrl(data_path, base_ckpt, output_dir, max_seq_length=350, batch_size=75, use_amp=True, qgen_prefix='qgen', similarity_function="dot"):
     prefix = qgen_prefix
     #### Training on Generated Queries ####
     corpus, gen_queries, gen_qrels = GenericDataLoader(data_path, prefix=prefix).load(split="train")
@@ -17,12 +17,12 @@ def mnrl(data_path, base_ckpt, output_dir, max_seq_length=350, use_amp=True, qge
     model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 
     #### Provide any sentence-transformers model path
-    retriever = TrainRetriever(model=model, batch_size=75)
+    retriever = TrainRetriever(model=model, batch_size=batch_size)
 
     #### Prepare training samples
     train_samples = retriever.load_train(corpus, gen_queries, gen_qrels)
     train_dataloader = retriever.prepare_train(train_samples, shuffle=True)
-    train_loss = BPRLoss(model=retriever.model)
+    train_loss = BPRLoss(model=retriever.model, similarity_fct=similarity_function)
 
     #### Provide model save path
     model_save_path = output_dir
