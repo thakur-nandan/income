@@ -59,7 +59,7 @@ class JPQTowerBert(BertDot):
     def tokenize(self, texts: List[str]):
         texts = [t[:10000] if len(t) > 0 else " " for t in texts]
         features = self.tokenizer.batch_encode_plus(
-            texts, max_length=self.max_input_length)
+            texts, max_length=self.max_input_length, truncation=True)
         features['input_ids'] = pack_tensor_2D(
                 features['input_ids'], 
                 default=self.tokenizer.pad_token_id, 
