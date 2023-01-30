@@ -61,7 +61,7 @@ class DenseRetrievalJPQSearch:
             logger.warning("Skip the corpus encoding process and utilize pre-computed corpus_index")
         
         if faiss.get_num_gpus() == 1:
-            logger.info("Transfering index to GPU-0")
+            logger.info("Transfering index to Single GPU")
             res = faiss.StandardGpuResources()
             co = faiss.GpuClonerOptions()
             co.useFloat16 = faiss.downcast_index(self.corpus_index).pq.M >= 56
