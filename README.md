@@ -177,7 +177,8 @@ python -m income.jpq.models.jpqtower_converter \
         --doc_encoder_model "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
         --query_faiss_index "./final_models/${dataset}/genq/epoch-1/OPQ96,IVF1,PQ96x8.index" \
         --doc_faiss_index "./init/${dataset}/OPQ96,IVF1,PQ96x8.index" \
-        --model_output_dir "./jpqtower/${dataset}/"
+        --model_output_dir "./jpqtower/${dataset}/"\
+        --backbone "distilbert"
 ```
 ### Inference
 ```python
