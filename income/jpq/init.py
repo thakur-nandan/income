@@ -34,7 +34,7 @@ def prediction(
     test_dataloader = DataLoader(
         test_dataset,
         sampler=SequentialSampler(test_dataset),
-        batch_size=eval_batch_size*n_gpu,
+        batch_size=eval_batch_size*n_gpu if n_gpu > 0 else eval_batch_size,
         collate_fn=data_collator,
         drop_last=False,
     )
