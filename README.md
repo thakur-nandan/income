@@ -158,11 +158,12 @@ CUDA_VISIBLE_DEVICES=0 python -m income.jpq.train_gpl \
     --model_save_dir "./final_models/${dataset}/gpl" \
     --init_backbone "distilbert"\
     --log_dir "./logs/${dataset}/log" \
-    --init_index_path "./init/${dataset}/OPQ32,IVF1,PQ32x8.index" \
+    --init_index_path "./init/${dataset}/OPQ96,IVF1,PQ96x8.index" \
     --init_model_path "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
     --data_path "./datasets/${dataset}" \
     --cross_encoder "cross-encoder/ms-marco-MiniLM-L-6-v2" \
     --lambda_cut 200 \
+    --gpu_search \
     --centroid_lr 1e-4 \
     --train_batch_size 32 \
     --num_train_epochs 2 \
