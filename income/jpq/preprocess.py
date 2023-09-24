@@ -325,7 +325,7 @@ def get_arguments():
     parser.add_argument(
         "--tokenizer",
         type=str,
-        required=True,
+        required=False,
         help="tokenizer to use for encoding, default: sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco",
     )
     parser.add_argument(
@@ -337,7 +337,7 @@ def get_arguments():
     parser.add_argument("--threads", type=int, default=32)
 
     args = parser.parse_args()
-
+    args.tokenizer = "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" if args.tokenizer == '' else args.tokenizer
     return args
 
 if __name__ == '__main__':
