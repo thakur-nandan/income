@@ -337,7 +337,7 @@ def get_arguments():
     parser.add_argument("--threads", type=int, default=32)
 
     args = parser.parse_args()
-    args.tokenizer = "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" if args.tokenizer == '' else args.tokenizer
+    args.tokenizer = "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" if args.tokenizer == None else args.tokenizer
     return args
 
 if __name__ == '__main__':

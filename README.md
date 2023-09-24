@@ -145,7 +145,8 @@ CUDA_VISIBLE_DEVICES=0 python -m income.jpq.preprocess \
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m income.jpq.init \
   --preprocess_dir "./preprocessed/${dataset}" \
-  --model_dir "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco"
+  --model_dir "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
+  --backbone "distilbert"\
   --max_doc_length 350 \
   --output_dir "./init/${dataset}" \
   --subvector_num 96
