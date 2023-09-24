@@ -34,7 +34,7 @@ def prediction(
     test_dataloader = DataLoader(
         test_dataset,
         sampler=SequentialSampler(test_dataset),
-        batch_size=eval_batch_size*n_gpu,
+        batch_size=eval_batch_size*n_gpu if n_gpu > 0 else eval_batch_size,
         collate_fn=data_collator,
         drop_last=False,
     )
@@ -132,30 +132,37 @@ def init(
     doc_embeddings = doc_embeddings.reshape(-1, doc_embed_size)
     
     save_index_path = os.path.join(output_dir, f"OPQ{subvector_num},IVF1,PQ{subvector_num}x8.index")
-    res = faiss.StandardGpuResources()
-    
-    res.setTempMemory(1024*1024*512)
-    co = faiss.GpuClonerOptions()
-    co.useFloat16 = subvector_num >= 56
-    co.verbose = True
+    if n_gpu > 0:
+        # Set up for GPU only if available
+        res = faiss.StandardGpuResources()
+        res.setTempMemory(1024*1024*512)
+        co = faiss.GpuClonerOptions()
+        co.useFloat16 = subvector_num >= 56
+        co.verbose = True
 
-    # faiss.omp_set_num_threads(6)
+    # Common setup for CPU and GPU
     dim = doc_embed_size
-    index = faiss.index_factory(dim, 
-        f"OPQ{subvector_num},IVF1,PQ{subvector_num}x8", faiss.METRIC_INNER_PRODUCT)
+    index = faiss.index_factory(dim,
+                                f"OPQ{subvector_num},IVF1,PQ{subvector_num}x8",
+                                faiss.METRIC_INNER_PRODUCT)
     index.verbose = True
-    index = faiss.index_cpu_to_gpu(res, 0, index, co)    
+
+    if n_gpu > 0:
+        index = faiss.index_cpu_to_gpu(res, 0, index, co)
+
     logger.info("Starting to train faiss index on document embeddings!")
     assert not index.is_trained
     index.train(doc_embeddings)
     logger.info("Starting to index document embeddings!")
     assert index.is_trained
     index.add(doc_embeddings)
-    logger.info("Converting indexes from GPU to CPU!")
-    index = faiss.index_gpu_to_cpu(index)
-    logger.info("Saving index to CPU memory: {}".format(save_index_path))
-    faiss.write_index(index, save_index_path)
 
+    if n_gpu > 0:
+        logger.info("Converting indexes from GPU to CPU!")
+        index = faiss.index_gpu_to_cpu(index)
+
+    logger.info(f"Saving index to CPU memory: {save_index_path}")
+    faiss.write_index(index, save_index_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

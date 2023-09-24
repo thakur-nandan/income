@@ -4,7 +4,8 @@ from .models.backbones.roberta_tokenizer import RobertaTokenizer
 
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, RandomSampler
-from transformers import (AdamW, get_linear_schedule_with_warmup,
+from torch.optim import AdamW
+from transformers import (get_linear_schedule_with_warmup,
     RobertaConfig, AutoConfig, AutoTokenizer)
 from sentence_transformers import CrossEncoder
 
@@ -121,7 +122,6 @@ def compute_loss(query_embeddings, pq_codes, centroids,
         rel_scores = cur_top_scores[target_labels]
         irrel_scores = cur_top_scores[~target_labels]
         pair_diff = rel_scores - irrel_scores
-        
         query, docs = queries[qid], [corpus[doc_id] for doc_id in retrieve_pids.tolist()]
         scores_ce = cross_encoder.predict(
             [(query, x) for x in docs], 
@@ -173,7 +173,7 @@ def train(args, model, pq_codes, centroid_embeds, opq_transform, opq_index, toke
         {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0},
         {'params': [centroid_embeds], 'weight_decay': args.centroid_weight_decay, 'lr': args.centroid_lr},
     ]
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, eps=args.adam_epsilon)
+    optimizer = AdamW(params = optimizer_grouped_parameters, lr=args.lr, eps=args.adam_epsilon)
     scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=args.warmup_steps,
         num_training_steps=t_total)
@@ -290,7 +290,7 @@ def run_parse_args():
     
     parser.add_argument("--lambda_cut", type=int, required=True)
     parser.add_argument("--centroid_lr", type=float, required=True)
-    parser.add_argument("--gpu_search", action="store_true")
+    parser.add_argument("--gpu_search",  action='store_true')
     parser.add_argument("--centroid_weight_decay", type=float, default=0)
 
     parser.add_argument("--loss_neg_topK", type=int, default=200)
@@ -322,7 +322,7 @@ def train_gpl(args):
 
     # Setup CUDA, GPU 
     args.model_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    args.n_gpu = 1
+    args.n_gpu = 0
 
     logger.warning("Model Device: %s, n_gpu: %s", args.model_device, args.n_gpu)
 
@@ -371,11 +371,17 @@ def train_gpl(args):
     centroid_embeds = faiss.vector_to_array(ivf_index.pq.centroids)
     centroid_embeds = centroid_embeds.reshape(ivf_index.pq.M, ivf_index.pq.ksub, ivf_index.pq.dsub)
     coarse_quantizer = faiss.downcast_index(ivf_index.quantizer)
-    coarse_embeds = faiss.vector_to_array(coarse_quantizer.xb)
-    centroid_embeds += coarse_embeds.reshape(ivf_index.pq.M, -1, ivf_index.pq.dsub)
+    # the .xb attribute was depreciated in FAISS
+    # coarse_embeds = faiss.vector_to_array(coarse_quantizer.xb)
+    # centroid_embeds += coarse_embeds.reshape(ivf_index.pq.M, -1, ivf_index.pq.dsub)
+    coarse_embeds = faiss.rev_swig_ptr(
+            coarse_quantizer.get_xb(), coarse_quantizer.ntotal * coarse_quantizer.d
+        )
+    coarse_embeds = coarse_embeds.reshape(coarse_quantizer.ntotal, coarse_quantizer.d)
     faiss.copy_array_to_vector(centroid_embeds.ravel(), ivf_index.pq.centroids)
-    coarse_embeds[:] = 0   
-    faiss.copy_array_to_vector(coarse_embeds.ravel(), coarse_quantizer.xb)
+    coarse_embeds[:] = 0
+    # faiss.copy_array_to_vector(coarse_embeds.ravel(), coarse_quantizer.xb)
+    coarse_quantizer.add(coarse_embeds)
 
     centroid_embeds = torch.FloatTensor(centroid_embeds).to(args.model_device)
     centroid_embeds.requires_grad = True

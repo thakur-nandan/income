@@ -132,7 +132,7 @@ export PREFIX="gen"
 python -m income.jpq.beir.transform \
           --dataset ${dataset} \
           --output_dir "./datasets/${dataset}" \
-          --prefix  ${PREFIX} \
+          --prefix  ${PREFIX}
 ```
 2. Preprocessing Script tokenizes the queries and corpus
 ```bash
@@ -145,7 +145,8 @@ CUDA_VISIBLE_DEVICES=0 python -m income.jpq.preprocess \
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -m income.jpq.init \
   --preprocess_dir "./preprocessed/${dataset}" \
-  --model_dir "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco"
+  --model_dir "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
+  --backbone "distilbert"\
   --max_doc_length 350 \
   --output_dir "./init/${dataset}" \
   --subvector_num 96
@@ -155,6 +156,7 @@ CUDA_VISIBLE_DEVICES=0 python -m income.jpq.init \
 CUDA_VISIBLE_DEVICES=0 python -m income.jpq.train_gpl \
     --preprocess_dir "./preprocessed/${dataset}" \
     --model_save_dir "./final_models/${dataset}/gpl" \
+    --init_backbone "distilbert"\
     --log_dir "./logs/${dataset}/log" \
     --init_index_path "./init/${dataset}/OPQ96,IVF1,PQ96x8.index" \
     --init_model_path "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
@@ -175,7 +177,8 @@ python -m income.jpq.models.jpqtower_converter \
         --doc_encoder_model "sebastian-hofstaetter/distilbert-dot-tas_b-b256-msmarco" \
         --query_faiss_index "./final_models/${dataset}/genq/epoch-1/OPQ96,IVF1,PQ96x8.index" \
         --doc_faiss_index "./init/${dataset}/OPQ96,IVF1,PQ96x8.index" \
-        --model_output_dir "./jpqtower/${dataset}/"
+        --model_output_dir "./jpqtower/${dataset}/"\
+        --backbone "distilbert"
 ```
 ### Inference
 ```python

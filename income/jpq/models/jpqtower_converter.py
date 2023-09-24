@@ -40,8 +40,11 @@ def convert_to_jpqtower(query_encoder_model, doc_encoder_model, query_faiss_inde
         centroid_embeds = faiss.vector_to_array(ivf_index.pq.centroids)
         centroid_embeds = centroid_embeds.reshape(ivf_index.pq.M, ivf_index.pq.ksub, ivf_index.pq.dsub)
         coarse_quantizer = faiss.downcast_index(ivf_index.quantizer)
-        coarse_embeds = faiss.vector_to_array(coarse_quantizer.xb)
-        centroid_embeds += coarse_embeds.reshape(ivf_index.pq.M, -1, ivf_index.pq.dsub)
+        #.xb attribute was depreciated
+        #coarse_embeds = faiss.vector_to_array(coarse_quantizer.xb)
+        #centroid_embeds += coarse_embeds.reshape(ivf_index.pq.M, -1, ivf_index.pq.dsub)
+        coarse_embeds = faiss.rev_swig_ptr(coarse_quantizer.get_xb(), coarse_quantizer.ntotal * coarse_quantizer.d)
+        coarse_embeds = coarse_embeds.reshape(coarse_quantizer.ntotal, coarse_quantizer.d)
         coarse_embeds[:] = 0   
 
         if backbone == "distilbert":
