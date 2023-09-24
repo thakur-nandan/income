@@ -27,7 +27,8 @@ setup(
         'transformers >= 4.3.3',
         'tensorboard >= 2.5.0',
         'beir',
-        'datasets'
+        'datasets',
+        'boto3'
     ],
     keywords="Information Retrieval Transformer Networks BERT PyTorch IR NLP deep learning"
 )
