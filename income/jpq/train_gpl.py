@@ -122,7 +122,6 @@ def compute_loss(query_embeddings, pq_codes, centroids,
         rel_scores = cur_top_scores[target_labels]
         irrel_scores = cur_top_scores[~target_labels]
         pair_diff = rel_scores - irrel_scores
-
         query, docs = queries[qid], [corpus[doc_id] for doc_id in retrieve_pids.tolist()]
         scores_ce = cross_encoder.predict(
             [(query, x) for x in docs], 

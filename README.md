@@ -163,10 +163,10 @@ CUDA_VISIBLE_DEVICES=0 python -m income.jpq.train_gpl \
     --data_path "./datasets/${dataset}" \
     --cross_encoder "cross-encoder/ms-marco-MiniLM-L-6-v2" \
     --lambda_cut 200 \
-    --gpu_search \
     --centroid_lr 1e-4 \
     --train_batch_size 32 \
     --num_train_epochs 2 \
+    --gpu_search \
     --max_seq_length 64 \
     --loss_neg_topK 25
 ```
