@@ -121,12 +121,7 @@ def compute_loss(query_embeddings, pq_codes, centroids,
         cur_top_scores = (qembedding.reshape(1, -1) * psg_embeddings).sum(-1)
         rel_scores = cur_top_scores[target_labels]
         irrel_scores = cur_top_scores[~target_labels]
-        
-        # This line gives an error because rel_scores and irrel_scores are different sizes
-        # i.e. there are more irrelevant than relevant passages retrieved
-        # pair_diff = rel_scores - irrel_scores
-        # Instead let's calc the piecewise difference, which will result in a tensor of size [p+, p-]
-        pair_diff = rel_scores[:, None] - irrel_scores[None, :]
+        pair_diff = rel_scores - irrel_scores
 
         query, docs = queries[qid], [corpus[doc_id] for doc_id in retrieve_pids.tolist()]
         scores_ce = cross_encoder.predict(
@@ -138,8 +133,7 @@ def compute_loss(query_embeddings, pq_codes, centroids,
         )
         rel_ce_scores = scores_ce[target_labels]
         irrel_ce_scores = scores_ce[~target_labels]
-        # Once doing piecewise difference
-        labels = rel_ce_scores[:,None] - irrel_ce_scores[None,:]
+        labels = rel_ce_scores - irrel_ce_scores
         cur_loss = loss_function(pair_diff, labels)
         loss += cur_loss
 
@@ -379,15 +373,15 @@ def train_gpl(args):
     centroid_embeds = centroid_embeds.reshape(ivf_index.pq.M, ivf_index.pq.ksub, ivf_index.pq.dsub)
     coarse_quantizer = faiss.downcast_index(ivf_index.quantizer)
     # the .xb attribute was depreciated in FAISS
-    #coarse_embeds = faiss.vector_to_array(coarse_quantizer.xb)
-    #centroid_embeds += coarse_embeds.reshape(ivf_index.pq.M, -1, ivf_index.pq.dsub)
+    # coarse_embeds = faiss.vector_to_array(coarse_quantizer.xb)
+    # centroid_embeds += coarse_embeds.reshape(ivf_index.pq.M, -1, ivf_index.pq.dsub)
     coarse_embeds = faiss.rev_swig_ptr(
             coarse_quantizer.get_xb(), coarse_quantizer.ntotal * coarse_quantizer.d
         )
     coarse_embeds = coarse_embeds.reshape(coarse_quantizer.ntotal, coarse_quantizer.d)
     faiss.copy_array_to_vector(centroid_embeds.ravel(), ivf_index.pq.centroids)
     coarse_embeds[:] = 0
-    #faiss.copy_array_to_vector(coarse_embeds.ravel(), coarse_quantizer.xb)
+    # faiss.copy_array_to_vector(coarse_embeds.ravel(), coarse_quantizer.xb)
     coarse_quantizer.add(coarse_embeds)
 
     centroid_embeds = torch.FloatTensor(centroid_embeds).to(args.model_device)
