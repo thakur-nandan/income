@@ -132,7 +132,7 @@ export PREFIX="gen"
 python -m income.jpq.beir.transform \
           --dataset ${dataset} \
           --output_dir "./datasets/${dataset}" \
-          --prefix  ${PREFIX} \
+          --prefix  ${PREFIX}
 ```
 2. Preprocessing Script tokenizes the queries and corpus
 ```bash
